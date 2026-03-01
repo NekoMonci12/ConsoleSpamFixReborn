@@ -27,16 +27,11 @@ jobs:
         run: ./gradlew build
 
       - name: Upload JAR artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ConsoleSpamFixReborn-jars
-          path: build/libs/*.jar
-          retention-days: 30
-
-      - name: Upload build reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: build-reports
-          path: build/reports/
-          retention-days: 7
+        if: github.event_name == 'push'
+        run: |
+          RELEASE_TAG="${GITHUB_SHA:0:8}"
+          gh release delete "$RELEASE_TAG" --yes 2>/dev/null || true
+          FILES=$(ls build/libs/*.jar)
+          gh release create "$RELEASE_TAG" $FILES -t "Build $RELEASE_TAG" --prerelease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
